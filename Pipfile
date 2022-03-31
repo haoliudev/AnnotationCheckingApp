@@ -11,6 +11,7 @@ django-cleanup = "*"
 django-next-prev = "*"
 django-tailwind = "*"
 gunicorn = "*"
+whitenoise = "*"
 
 [dev-packages]
 
