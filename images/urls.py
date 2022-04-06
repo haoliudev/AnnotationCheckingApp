@@ -11,5 +11,8 @@ urlpatterns = [
     path('addlabel/', views.addLabel, name='addlabel'),
     path('bulkupload/', views.bulkUpload, name='bulkupload'),
     path('removeannotation/<str:pk>/', views.removeAnnotation, name='removeannotation'),
+    path('login/', views.loginUser, name='login'),
+    path('logout/', views.logoutUser, name='logout'),
+
    
 ]

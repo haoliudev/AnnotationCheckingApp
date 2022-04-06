@@ -23,7 +23,7 @@
 
         <a class="nav-link" href="{% url 'clearfiles' %}">Clear all files</a>
 
-        <a class="nav-link active" href="{% url 'bulkupload' %}">Upload multiple XML/image files</a>
+        <a class="nav-link active" href="{% url 'logout' %}">Logout</a>
 
       </nav>
 
@@ -32,6 +32,11 @@
           
         <div class="row">
             <div class="col-md-2">
+                {% if request.user.is_authenticated %}
+                
+                <p>Hello, {{request.user}}</p>
+
+                {% endif %}
                 <div class="card my-2">
                     <div class="card-header">
                       Categories

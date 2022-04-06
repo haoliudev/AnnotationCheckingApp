@@ -1,5 +1,9 @@
 from unicodedata import category
 from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
 from images.forms import XmlModelForm, XmlImgModelForm, UpdateImgModelForm
 from .models import Annotation, Category, Image, Xml_img_files, Xmlfile
@@ -23,8 +27,10 @@ from django.urls import reverse
 
 
 # Create your views here.
-
+@login_required(login_url='login')
 def gallery(request):
+
+    # user = request.user
 
     category = request.GET.get('category')
     print('category:', category)
@@ -48,6 +54,7 @@ def gallery(request):
     context = {'categories': categories, 'imgs': imgs, 'files': files}
     return render(request, 'images/gallery.html', context)
 
+@login_required(login_url='login')
 def viewImg(request, pk):
     img = Image.objects.get(id=pk)
     Imgs = Image.objects.all()
@@ -139,7 +146,7 @@ def viewImg(request, pk):
 
 
 
-
+@login_required(login_url='login')
 def addLabel(request):
     categories = Category.objects.all()
 
@@ -156,6 +163,7 @@ def addLabel(request):
     context = {'categories': categories}
     return render(request, 'images/addlabel.html', context)
 
+@login_required(login_url='login')
 def removeAnnotation(request,pk):
     categories = Category.objects.all()
     Imgs = Image.objects.all()
@@ -188,7 +196,7 @@ def removeAnnotation(request,pk):
         
 
 
-
+@login_required(login_url='login')
 def editlabel(request,pk):
     categories = Category.objects.all()
     Imgs = Image.objects.all()
@@ -208,7 +216,7 @@ def editlabel(request,pk):
     context = {'categories': categories,'category':category}
     return render(request, 'images/editlabel.html', context)
 
-
+@login_required(login_url='login')
 def addImg(request):
     categories = Category.objects.all()
 
@@ -247,7 +255,7 @@ def cropper(original_image, xmin, ymin, xmax, ymax):
       img_content = ContentFile(img_io.getvalue(), 'img5.jpg')
       return img_content
 
-
+@login_required(login_url='login')
 def clearfiles(request):
         if request.method == 'POST':
 
@@ -266,7 +274,7 @@ def clearfiles(request):
         return render(request, 'images/clearfiles.html')
 
 
-
+@login_required(login_url='login')
 def addFiles(request):
 
     categories = Category.objects.all()
@@ -355,3 +363,21 @@ def createItems(xml_file_path,img_file_path):
                 xmin = left,
                 xmlfile = xml_file_path,
                 )
+
+def loginUser(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request,username=username, password=password)
+        
+        if user is not None:
+            login(request,user)
+            return redirect('gallery')
+
+    return render(request, 'images/login.html')
+
+
+def logoutUser(request):
+    logout(request)
+    return redirect('login')
+
