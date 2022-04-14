@@ -38,7 +38,6 @@
 
 
         </style>
-    
 </head>
 <body class="m-5">
     <div class="container">
@@ -49,13 +48,11 @@
 
                 <div>
                     <div>
-                    <img id="bigpic" src="bigpic" style="display:none;"/>
-                    <img style="max-height: 30%; min-width: 85%; margin: auto;    
+                        
+                    <img style="max-height: 30%; min-width: 65%; margin: auto;    
                     display: block;" class="img-fluid" alt="Responsive image" 
-                    src="{{img.img.url}}"  id="imgClickAndChange">
-                    {% comment %} <button class="btn btn-dark my-3" onclick="changeImage()">Processed/Original image</button> {% endcomment %}
+                    src="{{img.img.url}}">
                     </div>
-                    
                     
                     <nav aria-label="Page navigation example" style="margin: auto;    
                     display: block;">
@@ -95,9 +92,6 @@
                       
                     
                 </div>
-                <div style="padding:30px">
-                  <h3>See original item below</h3>
-                </div> 
 
                 
             </div>
@@ -181,7 +175,7 @@
                     
     
 
-                    <a href="{{img.cropped.url}}" class="btn btn-dark btn-lg btn-block m-1" download="misidentified.png">- Download this item</a>
+                  
                   <a href="{% url 'removeannotation' img.id %}" class="btn btn-dark btn-lg btn-block m-1">- Remove Annotation</a>
                   
                   
@@ -228,33 +222,10 @@
                 </div>
         </div>
         <div class="w-100"></div>
-        <div class="col">   
-          <div>
-          <img id="bigpic" src="bigpic" style="display:none;"/>
-          <img style="padding:50px; max-height: 30%; min-width: 65%; margin: auto;    
-          display: block;" class="img-fluid" alt="Responsive image" 
-          src="{{img.oimg.url}}"  id="imgClickAndChange">
-          {% comment %} <button class="btn btn-dark my-3" onclick="changeImage()">Processed/Original image</button> {% endcomment %}
-          </div>    
-        </div>
-        <div class="col">  
-          
-        </div>
+        <div class="col">       </div>
+        <div class="col">       </div>
     </div>
 </div>
-
-<script language="javascript">
-  function changeImage() {
-
-      if (document.getElementById("imgClickAndChange").src == "{{img.img.url}}" ) 
-      {
-          document.getElementById("imgClickAndChange").src = "{{img.oimg.url}}" ;
-      }
-      else 
-      {
-          document.getElementById("imgClickAndChange").src = "{{img.img.url}}";
-      }
-  }
-</script>
+    
 </body>
 </html>

@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.http import FileResponse
 
 from images.forms import XmlModelForm, XmlImgModelForm, UpdateImgModelForm
 from .models import Annotation, Category, Image, Xml_img_files, Xmlfile
@@ -23,6 +24,13 @@ from io import BytesIO
 from .next_prev import next_in_order, prev_in_order
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+import cv2
+import numpy as np
+import math
+from cv2 import cvtColor, COLOR_BGR2RGB
+from numpy import array
+import imutils
+from rembg import remove
 
 
 
@@ -57,6 +65,8 @@ def gallery(request):
 @login_required(login_url='login')
 def viewImg(request, pk):
     img = Image.objects.get(id=pk)
+    imgURL = img.img.url
+    oimgURL = img.oimg.url
     Imgs = Image.objects.all()
     files = Xml_img_files.objects.all()
     categories = Category.objects.all()
@@ -80,6 +90,7 @@ def viewImg(request, pk):
 
     next = next_in_order(img, loop=True)
     previous = prev_in_order(img, loop=True)
+    
 
     if request.method == "POST" :
         for oneCategory in categories:
@@ -103,6 +114,9 @@ def viewImg(request, pk):
 
                     root[itemNum][0].text = data[str(oneCategory.pk)]
                     tree.write(xmlpath)
+                fileDownload(img.img.path,"misidentified.png")
+                
+                
 
         if 'textEdit' in request.POST:
                 data = request.POST
@@ -126,11 +140,19 @@ def viewImg(request, pk):
 
                         root[itemNum][0].text = str(data['category_new'])
                         tree.write(xmlpath)
+                    fileDownload(img.img.path,"misidentified.png")
+        
+                    
+        
+        
+
 
 
         
    
         return HttpResponseRedirect(request.path_info)
+
+        
             
 
        
@@ -304,6 +326,7 @@ def bulkUpload(request):
         img = request.FILES.get('img')
     return render(request, 'images/bulkupload.html')
 
+
 def createItems(xml_file_path,img_file_path):
     with open(xml_file_path, 'r') as f:
         tree = ET.parse(f)
@@ -314,12 +337,101 @@ def createItems(xml_file_path,img_file_path):
         myList = []
         im = PILIMAGE.open(img_file_path, 'r').convert("RGBA")
         source_width, source_height = im.size
+
+
+        im_cv = cvtColor(array(PILIMAGE.open(img_file_path)), COLOR_BGR2RGB)
+        
+ 
             
         for i in range(6,itemNum):
             left=int(root[i][4][0].text)
             top=int(root[i][4][1].text)
             right=int(root[i][4][2].text)
             bottom=int(root[i][4][3].text)
+
+            xmin=int(root[i][4][0].text)
+            ymin=int(root[i][4][1].text)
+            xmax=int(root[i][4][2].text)
+            ymax=int(root[i][4][3].text)
+
+
+
+            
+            im_cv = cv2.imread(img_file_path)
+            
+
+            cropped_cv = im_cv[ymin:ymax,xmin:xmax]
+            clean_cv = remove(cropped_cv)
+
+            cropped_pil = PILIMAGE.fromarray(cv2.cvtColor(clean_cv, cv2.COLOR_BGR2RGB))
+
+
+            
+            cropped_io = BytesIO()
+                    
+            
+            cropped_pil.save(cropped_io, format='PNG', quality=100)
+            cropped_content = ContentFile(cropped_io.getvalue(), 'cropped_img'+str(i)+'.png')
+
+
+            gray = cv2.cvtColor(clean_cv, cv2.COLOR_BGR2GRAY)
+
+
+
+
+
+           
+            ret, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            ret = ret - 12
+            ret, thresh = cv2.threshold(gray, ret, 255 ,cv2.THRESH_BINARY)
+
+            # threshold
+            # thresh = cv2.threshold(gray, 100 , 255, cv2.THRESH_BINARY)[1]
+
+            # find largest contour
+            contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = contours[0] if len(contours) == 2 else contours[1]
+            big_contour = max(contours, key=cv2.contourArea, default=np.column_stack(np.where(thresh > 0)))
+            print(big_contour)
+
+            if len(big_contour)>=5:
+
+                
+
+                # Compute rotated bounding box
+                # coords = np.column_stack(np.where(thresh > 0))
+                genElipse = cv2.fitEllipse(big_contour)
+                angle = genElipse[2]
+                print("original angle is: "+str(angle))
+
+
+                # if angle <= 90:
+                #     angle = 90-angle
+
+                # else:
+                #     angle = 180-angle
+
+                angle = 90-angle
+                print("rotation angle is: "+str(angle))
+                rotated = imutils.rotate_bound(clean_cv, angle)
+            else:
+                rotated = rotated = imutils.rotate_bound(clean_cv, 1)
+            rotated = cv2.cvtColor(rotated, cv2.COLOR_BGR2RGB)
+            im_pil = PILIMAGE.fromarray(rotated)
+
+
+            
+            img_io = BytesIO()
+                    
+            
+            im_pil.save(img_io, format='PNG', quality=100)
+            img_content = ContentFile(img_io.getvalue(), 'img'+str(i)+'.png')
+
+
+
+
+            # original cropped item
+
             im1 = im.crop((left, top, right, bottom))
             width1, height1 = im1.size
             newsize = (width1*8,height1*8)
@@ -342,11 +454,12 @@ def createItems(xml_file_path,img_file_path):
             offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
 
             background.paste(im1,offset,im1)    
-            img_io = BytesIO()
+            oimg_io = BytesIO()
                     
             
-            background.save(img_io, format='PNG', quality=100)
-            img_content = ContentFile(img_io.getvalue(), 'img'+str(i)+'.png')
+            background.save(oimg_io, format='PNG', quality=100)
+            oimg_content = ContentFile(oimg_io.getvalue(), 'oimg'+str(i)+'.png')
+
 
 
 
@@ -360,9 +473,11 @@ def createItems(xml_file_path,img_file_path):
                 category=go,
                 description=None,
                 img = img_content,
+                oimg = oimg_content,
+                cropped = cropped_content,
                 xmin = left,
                 xmlfile = xml_file_path,
-                )
+            )
 
 def loginUser(request):
     if request.method == 'POST':
@@ -380,4 +495,10 @@ def loginUser(request):
 def logoutUser(request):
     logout(request)
     return redirect('login')
+
+def fileDownload(filesource,filename):
+    response = FileResponse(open(filesource, 'rb'))
+    response['Content-Disposition'] = 'attachment; filename=%s' % filename
+    print("downloading misid")
+    return response
 

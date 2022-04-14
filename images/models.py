@@ -15,6 +15,8 @@ class Category(models.Model):
 class Image(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     img = models.ImageField()
+    oimg = models.ImageField(null=True)
+    cropped = models.ImageField(null=True)
     description = models.TextField(null=True, blank=True)
     xmin = models.IntegerField(default=None)
     xmlfile = models.FilePathField(null=True, blank=True)

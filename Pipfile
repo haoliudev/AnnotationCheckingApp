@@ -12,6 +12,10 @@ django-next-prev = "*"
 django-tailwind = "*"
 gunicorn = "*"
 whitenoise = "*"
+opencv-python = "*"
+numpy = "*"
+imutils = "*"
+rembg = "*"
 
 [dev-packages]
 
