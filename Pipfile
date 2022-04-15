@@ -16,6 +16,7 @@ opencv-python = "*"
 numpy = "*"
 imutils = "*"
 rembg = "*"
+opencv-python-headless = "*"
 
 [dev-packages]
 
